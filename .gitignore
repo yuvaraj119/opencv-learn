@@ -213,8 +213,8 @@ __marimo__/
 # Large notebook (>100 MB, exceeds GitHub limit)
 BasicImageOperations.ipynb
 
-# Docs
-streamlit-app/docs/
+# Docs build output only
+streamlit-app/docs/_build/
 
 # Claude Code instructions
 streamlit-app/CLAUDE.md
@@ -229,3 +229,9 @@ streamlit-app/models/*.tflite
 !streamlit-app/models/*.prototxt
 !streamlit-app/models/*.pbtxt
 !streamlit-app/models/*.txt
+/streamlit-app/models/text_recognition_CRNN_EN_2021sep.onnx
+/streamlit-app/models/yolov5su.onnx
+/streamlit-app/models/yolov8s.onnx
+/streamlit-app/models/googlenet-9.onnx
+/streamlit-app/models/face_detection_yunet_2023mar.onnx
+/streamlit-app/models/DB_TD500_resnet18.onnx
