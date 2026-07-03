@@ -5,11 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
+# From the repo root — change into the app directory first
+cd streamlit-app
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the app locally
-streamlit run streamlit_app_ss.py
+# Run the app locally (must use python -m streamlit, not the binary)
+/path/to/.venv/bin/python -m streamlit run streamlit_app_ss.py --server.port 8501
 
 # Deploy (Heroku-style) — runs setup.sh then launches app
 sh setup.sh && streamlit run streamlit_app_ss.py
