@@ -6,7 +6,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.tasks.python.vision import drawing_utils, drawing_styles
 from PIL import Image
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Golf Swing Analysis", page_icon="⛳")
 st.title("Golf Swing Analysis and Training")
@@ -16,11 +16,10 @@ Analyze body posture during a golf swing using MediaPipe PoseLandmarker.
 Key measurements: spine angle, arm bend, hip–shoulder alignment, and knee flex.
 """)
 
-MODEL_PATH = "models/pose_landmarker_heavy.task"
 
 @st.cache_resource()
 def load_pose_landmarker():
-    base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
+    base_options = python.BaseOptions(model_asset_path=ensure_model("pose_landmarker_heavy.task"))
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.IMAGE,

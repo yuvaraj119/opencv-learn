@@ -1,3 +1,5 @@
+import os
+import requests
 import streamlit as st
 
 _PAGE_INFO = {
@@ -377,3 +379,73 @@ def show_page_info(page_key: str) -> None:
 
     if st.button("ℹ️ About this tool", key=f"about_{key}"):
         _show_dialog()
+
+
+# ── Model auto-downloader ─────────────────────────────────────────────────────
+
+_RELEASE_BASE = (
+    "https://github.com/yuvaraj119/opencv-learn/releases/download/v1.0-models"
+)
+
+# Maps filename → approximate size in bytes (for progress display)
+_MODEL_REGISTRY: dict[str, int] = {
+    "res10_300x300_ssd_iter_140000_fp16.caffemodel": 5_300_000,
+    "MobileNetSSD_deploy.caffemodel":                22_000_000,
+    "DenseNet_121.caffemodel":                       31_000_000,
+    "ssd_mobilenet_frozen_inference_graph.pb":       66_000_000,
+    "face_landmarker.task":                           3_600_000,
+    "person_segmenter.tflite":                        2_700_000,
+    "pose_landmarker_heavy.task":                    29_000_000,
+    "LapSRN_x2.pb":                                   1_300_000,
+    "LapSRN_x4.pb":                                   2_600_000,
+    "LapSRN_x8.pb":                                   3_900_000,
+    "FSRCNN_x2.pb":                                      38_000,
+    "FSRCNN_x3.pb":                                      39_000,
+    "FSRCNN_x4.pb":                                      41_000,
+    "ESPCN_x2.pb":                                       84_000,
+    "ESPCN_x3.pb":                                       90_000,
+    "ESPCN_x4.pb":                                       98_000,
+}
+
+_MODELS_DIR = "models"
+
+
+def ensure_model(filename: str) -> str:
+    """Return the local path to a model file, downloading it from GitHub
+    Releases if it is not already present on disk.
+
+    Shows a Streamlit progress indicator while downloading. Safe to call
+    inside @st.cache_resource loaders — the download only runs once per
+    missing file per app restart.
+    """
+    os.makedirs(_MODELS_DIR, exist_ok=True)
+    local_path = os.path.join(_MODELS_DIR, filename)
+
+    if os.path.exists(local_path):
+        return local_path
+
+    url = f"{_RELEASE_BASE}/{filename}"
+    approx_size = _MODEL_REGISTRY.get(filename, 0)
+    size_mb = f"{approx_size / 1_000_000:.0f} MB" if approx_size else "?"
+
+    with st.status(f"Downloading model: {filename} ({size_mb})", expanded=True) as status:
+        st.write(f"Source: {url}")
+        try:
+            response = requests.get(url, stream=True, timeout=120)
+            response.raise_for_status()
+            total = int(response.headers.get("content-length", approx_size or 1))
+            bar = st.progress(0, text="Starting download…")
+            downloaded = 0
+            with open(local_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=65_536):
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    pct = min(downloaded / total, 1.0)
+                    bar.progress(pct, text=f"{downloaded / 1_000_000:.1f} / {total / 1_000_000:.1f} MB")
+            status.update(label=f"✅ {filename} ready", state="complete", expanded=False)
+        except Exception as exc:
+            status.update(label=f"❌ Failed to download {filename}", state="error")
+            st.error(str(exc))
+            raise
+
+    return local_path

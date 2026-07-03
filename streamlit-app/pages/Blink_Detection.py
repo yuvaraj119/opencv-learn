@@ -6,14 +6,13 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.tasks.python.vision import drawing_utils, drawing_styles
 from PIL import Image
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Blink Detection", page_icon="👁️")
 st.title("Blink Detection using Facial Landmarks")
 show_page_info("Blink_Detection")
 st.write("Uses MediaPipe FaceLandmarker to detect eye blendshape scores — a direct measure of how open or closed each eye is.")
 
-MODEL_PATH = "models/face_landmarker.task"
 
 # EAR landmark indices (same topology as old FaceMesh 468 landmarks)
 LEFT_EYE  = [362, 385, 387, 263, 373, 380]
@@ -28,7 +27,7 @@ def eye_aspect_ratio(landmarks, eye_indices, img_w, img_h):
 
 @st.cache_resource()
 def load_face_landmarker():
-    base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
+    base_options = python.BaseOptions(model_asset_path=ensure_model("face_landmarker.task"))
     options = vision.FaceLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.IMAGE,

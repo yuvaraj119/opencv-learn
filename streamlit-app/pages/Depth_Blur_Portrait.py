@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import base64
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Portrait Mode / Depth Blur", page_icon="📸")
 st.title("Portrait Mode / Depth Blur")
@@ -13,7 +13,7 @@ st.write("Simulate smartphone portrait mode by detecting the face and blurring t
 
 @st.cache_resource()
 def load_face_model():
-    return cv2.dnn.readNetFromCaffe("models/deploy.prototxt", "models/res10_300x300_ssd_iter_140000_fp16.caffemodel")
+    return cv2.dnn.readNetFromCaffe("models/deploy.prototxt", ensure_model("res10_300x300_ssd_iter_140000_fp16.caffemodel"))
 
 def get_download_link(img_bgr, filename):
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)

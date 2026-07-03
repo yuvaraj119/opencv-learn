@@ -7,14 +7,13 @@ from mediapipe.tasks.python import vision
 from PIL import Image
 from io import BytesIO
 import base64
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Foreground Segmentation", page_icon="✂️")
 st.title("Foreground Segmentation & Background Effects")
 show_page_info("Foreground_Segmentation")
 st.write("Separate the foreground subject from the background using MediaPipe Image Segmentation.")
 
-MODEL_PATH = "models/person_segmenter.tflite"
 
 def get_download_link(img_bgr, filename):
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -25,7 +24,7 @@ def get_download_link(img_bgr, filename):
 
 @st.cache_resource()
 def load_segmenter():
-    base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
+    base_options = python.BaseOptions(model_asset_path=ensure_model("person_segmenter.tflite"))
     options = vision.ImageSegmenterOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.IMAGE,

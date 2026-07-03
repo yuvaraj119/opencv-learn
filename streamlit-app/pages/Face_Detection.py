@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import base64
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 #---------------------------------------------------------------------------------------
 # The session_state function allows us to initialize and save variables across for across
@@ -62,7 +62,7 @@ def process_detections(frame, detections, conf_threshold=0.5):
 # Function to load the DNN model.
 @st.cache_resource()
 def load_model():
-    modelFile = "models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+    modelFile  = ensure_model("res10_300x300_ssd_iter_140000_fp16.caffemodel")
     configFile = "models/deploy.prototxt"
     net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
     return net

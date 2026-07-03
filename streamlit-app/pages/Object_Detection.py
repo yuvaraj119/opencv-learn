@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import base64
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 #---------------------------------------------------------------------------------------
 # The session_state function allows us to initialize and save variables across for across
@@ -65,7 +65,7 @@ def process_detections(frame, detections, class_names, conf_threshold=0.5):
 # Function to load the DNN model.
 @st.cache_resource()
 def load_model():
-    modelFile  = "models/ssd_mobilenet_frozen_inference_graph.pb"
+    modelFile  = ensure_model("ssd_mobilenet_frozen_inference_graph.pb")
     configFile = "models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"
     with open("models/coco_class_labels.txt") as f:
         class_names = f.read().strip().split("\n")

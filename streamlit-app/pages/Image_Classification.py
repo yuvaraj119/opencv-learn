@@ -2,14 +2,14 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Image Classification", page_icon="🖼️")
 st.title("Deep Learning Image Classification")
 show_page_info("Image_Classification")
 st.write("Classify images into 1000 ImageNet categories using a DenseNet-121 model via OpenCV DNN.")
 
-MODEL_FILE  = "models/DenseNet_121.caffemodel"
+MODEL_FILE  = None  # loaded lazily via ensure_model()
 CONFIG_FILE = "models/DenseNet_121.prototxt"
 LABELS_FILE = "models/classification_classes_ILSVRC2012.txt"
 
@@ -18,7 +18,7 @@ def load_model():
     with open(LABELS_FILE) as f:
         image_net_names = f.read().split("\n")
     class_names = [name.split(",")[0] for name in image_net_names if name.strip()]
-    net = cv2.dnn.readNet(model=MODEL_FILE, config=CONFIG_FILE, framework="Caffe")
+    net = cv2.dnn.readNet(model=ensure_model("DenseNet_121.caffemodel"), config=CONFIG_FILE, framework="Caffe")
     return net, class_names
 
 def classify(net, img_bgr, class_names, top_k=5):

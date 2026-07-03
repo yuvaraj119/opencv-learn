@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 import os
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Super Resolution", page_icon="🔍")
 st.title("Image Super Resolution")
@@ -13,15 +13,15 @@ show_page_info("Super_Resolution")
 st.write("Enhance image resolution using deep learning-based super resolution models (FSRCNN, ESPCN, LapSRN).")
 
 MODELS = {
-    "FSRCNN ×2 (fast, good quality)":  ("models/FSRCNN_x2.pb", 2),
-    "FSRCNN ×3":                        ("models/FSRCNN_x3.pb", 3),
-    "FSRCNN ×4":                        ("models/FSRCNN_x4.pb", 4),
-    "ESPCN ×2 (efficient, sharp)":      ("models/ESPCN_x2.pb",  2),
-    "ESPCN ×3":                         ("models/ESPCN_x3.pb",  3),
-    "ESPCN ×4":                         ("models/ESPCN_x4.pb",  4),
-    "LapSRN ×2 (best perceptual)":      ("models/LapSRN_x2.pb", 2),
-    "LapSRN ×4":                        ("models/LapSRN_x4.pb", 4),
-    "LapSRN ×8":                        ("models/LapSRN_x8.pb", 8),
+    "FSRCNN ×2 (fast, good quality)":  (ensure_model("FSRCNN_x2.pb"), 2),
+    "FSRCNN ×3":                        (ensure_model("FSRCNN_x3.pb"), 3),
+    "FSRCNN ×4":                        (ensure_model("FSRCNN_x4.pb"), 4),
+    "ESPCN ×2 (efficient, sharp)":      (ensure_model("ESPCN_x2.pb"),  2),
+    "ESPCN ×3":                         (ensure_model("ESPCN_x3.pb"),  3),
+    "ESPCN ×4":                         (ensure_model("ESPCN_x4.pb"),  4),
+    "LapSRN ×2 (best perceptual)":      (ensure_model("LapSRN_x2.pb"), 2),
+    "LapSRN ×4":                        (ensure_model("LapSRN_x4.pb"), 4),
+    "LapSRN ×8":                        (ensure_model("LapSRN_x8.pb"), 8),
 }
 
 @st.cache_resource()

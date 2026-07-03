@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import base64
-from utils import show_page_info
+from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="Social Distancing Monitoring", page_icon="📏")
 st.title("Social Distancing Monitoring")
@@ -12,11 +12,11 @@ show_page_info("Social_Distancing_Monitoring")
 st.write("Detect people in an image and flag pairs that are too close together using MobileNet-SSD.")
 
 MODEL_CFG   = "models/MobileNetSSD_deploy.prototxt"
-MODEL_FILE  = "models/MobileNetSSD_deploy.caffemodel"
+MODEL_FILE  = None  # loaded lazily via ensure_model()
 
 @st.cache_resource()
 def load_model():
-    return cv2.dnn.readNetFromCaffe(MODEL_CFG, MODEL_FILE)
+    return cv2.dnn.readNetFromCaffe(MODEL_CFG, ensure_model("MobileNetSSD_deploy.caffemodel"))
 
 def detect_people(frame, net, conf_thresh=0.5):
     """Return list of (confidence, (x1,y1,x2,y2), (cx,cy)) for every detected person."""
