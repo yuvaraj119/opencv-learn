@@ -1,0 +1,10 @@
+numpy
+streamlit
+opencv-python-headless
+pillow
+matplotlib
+GDAL
+pytesseract
+mediapipe
+qrcode[pil]
+streamlit-image-coordinates
