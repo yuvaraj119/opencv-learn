@@ -387,19 +387,50 @@ _RELEASE_BASE = (
     "https://github.com/yuvaraj119/opencv-learn/releases/download/v1.0-models"
 )
 
+# Models with a stable authoritative URL — downloaded directly, not from GitHub Releases
+_DIRECT_URLS: dict[str, str] = {
+    "face_detection_yunet_2023mar.onnx": (
+        "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet"
+        "/face_detection_yunet_2023mar.onnx"
+    ),
+    "googlenet-9.onnx": (
+        "https://github.com/onnx/models/raw/main/validated/vision/classification"
+        "/inception_and_googlenet/googlenet/model/googlenet-9.onnx"
+    ),
+    "FSRCNN_x2.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x2.pb",
+    "FSRCNN_x3.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x3.pb",
+    "FSRCNN_x4.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x4.pb",
+    "ESPCN_x2.pb": "https://github.com/fannymonori/TF-ESPCN/raw/master/export/ESPCN_x2.pb",
+    "ESPCN_x3.pb": "https://github.com/fannymonori/TF-ESPCN/raw/master/export/ESPCN_x3.pb",
+    "ESPCN_x4.pb": "https://github.com/fannymonori/TF-ESPCN/raw/master/export/ESPCN_x4.pb",
+    "LapSRN_x2.pb": "https://github.com/fannymonori/TF-LapSRN/raw/master/export/LapSRN_x2.pb",
+    "LapSRN_x4.pb": "https://github.com/fannymonori/TF-LapSRN/raw/master/export/LapSRN_x4.pb",
+    "LapSRN_x8.pb": "https://github.com/fannymonori/TF-LapSRN/raw/master/export/LapSRN_x8.pb",
+    "face_landmarker.task": (
+        "https://storage.googleapis.com/mediapipe-models/face_landmarker"
+        "/face_landmarker/float16/1/face_landmarker.task"
+    ),
+    "person_segmenter.tflite": (
+        "https://storage.googleapis.com/mediapipe-models/image_segmenter"
+        "/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+    ),
+    "pose_landmarker_heavy.task": (
+        "https://storage.googleapis.com/mediapipe-models/pose_landmarker"
+        "/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+    ),
+    "ssd_mobilenet_frozen_inference_graph.pb": (
+        "https://opencv-courses.s3.us-west-2.amazonaws.com/ssd_mobilenet_frozen_inference_graph.pb"
+    ),
+}
+
 # Maps filename → approximate size in bytes (for progress display)
 _MODEL_REGISTRY: dict[str, int] = {
-    # Face / portrait detection (YuNet ONNX — replaces Caffe SSD in OpenCV 5)
     "face_detection_yunet_2023mar.onnx":             388_000,
-    # Image classification (GoogLeNet ONNX — replaces DenseNet Caffe in OpenCV 5)
     "googlenet-9.onnx":                              26_000_000,
-    # Object / person detection
     "ssd_mobilenet_frozen_inference_graph.pb":       66_000_000,
-    # MediaPipe task models
     "face_landmarker.task":                           3_600_000,
     "person_segmenter.tflite":                        2_700_000,
     "pose_landmarker_heavy.task":                    29_000_000,
-    # Super resolution
     "LapSRN_x2.pb":                                   1_300_000,
     "LapSRN_x4.pb":                                   2_600_000,
     "LapSRN_x8.pb":                                   3_900_000,
@@ -428,7 +459,7 @@ def ensure_model(filename: str) -> str:
     if os.path.exists(local_path):
         return local_path
 
-    url = f"{_RELEASE_BASE}/{filename}"
+    url = _DIRECT_URLS.get(filename) or f"{_RELEASE_BASE}/{filename}"
     approx_size = _MODEL_REGISTRY.get(filename, 0)
     size_mb = f"{approx_size / 1_000_000:.0f} MB" if approx_size else "?"
 
