@@ -2,7 +2,6 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
-from io import BytesIO
 from utils import show_page_info, ensure_model
 
 st.set_page_config(page_title="OCR - Optical Character Recognition", page_icon="📝")
@@ -11,6 +10,44 @@ show_page_info("OCR")
 
 MODE_DOC   = "Document / Form"
 MODE_SCENE = "Signboard / Scene Text"
+
+# ── Module-level helpers (stable cache keys across all reruns) ────────────────
+
+def _four_points_transform(frame, vertices):
+    """Perspective-warp a detected text polygon to a flat 100×32 rectangle."""
+    vertices = np.asarray(vertices, dtype=np.float32)
+    out_size = (100, 32)
+    target   = np.array(
+        [[0, out_size[1]-1], [0, 0],
+         [out_size[0]-1, 0], [out_size[0]-1, out_size[1]-1]],
+        dtype=np.float32,
+    )
+    M = cv2.getPerspectiveTransform(vertices, target)
+    return cv2.warpPerspective(frame, M, out_size)
+
+
+@st.cache_resource()
+def _load_scene_models():
+    """Load DB text detector + CRNN recognizer once and keep in memory."""
+    det_path = ensure_model("DB_TD500_resnet18.onnx")
+    rec_path = ensure_model("text_recognition_CRNN_EN_2021sep.onnx")
+
+    detector = cv2.dnn_TextDetectionModel_DB(det_path)
+    detector.setBinaryThreshold(0.3).setPolygonThreshold(0.5)
+    detector.setInputParams(
+        1.0 / 255, (320, 320),
+        (122.67891434, 116.66876762, 104.00698793), True,
+    )
+
+    recognizer = cv2.dnn_TextRecognitionModel(rec_path)
+    recognizer.setDecodeType("CTC-greedy")
+    recognizer.setVocabulary(list("0123456789abcdefghijklmnopqrstuvwxyz"))
+    recognizer.setInputParams(1 / 127.5, (100, 32), (127.5, 127.5, 127.5), True)
+
+    return detector, recognizer
+
+
+# ── UI ────────────────────────────────────────────────────────────────────────
 
 mode = st.radio(
     "Select OCR approach based on your use case:",
@@ -34,9 +71,10 @@ if uploaded_file is None:
     )
     st.stop()
 
-image    = Image.open(uploaded_file).convert("RGB")
-img_arr  = np.array(image)
-img_bgr  = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
+image   = Image.open(uploaded_file).convert("RGB")
+img_arr = np.array(image)
+img_bgr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
+
 
 # ── MODE 1: Document / Form (Tesseract) ──────────────────────────────────────
 if mode == MODE_DOC:
@@ -60,7 +98,6 @@ if mode == MODE_DOC:
     }
 
     col_ctrl, col_preview = st.columns([1, 2])
-
     with col_ctrl:
         psm_label    = st.selectbox("Page layout / text structure", list(PSM_OPTIONS.keys()))
         apply_blur   = st.checkbox("Denoise (Gaussian blur)", value=False)
@@ -95,12 +132,10 @@ if mode == MODE_DOC:
                 )
                 st.stop()
 
-        # Draw word bounding boxes on original image
         annotated = image.copy()
         draw = ImageDraw.Draw(annotated)
         for i, word in enumerate(data["text"]):
-            conf = int(data["conf"][i])
-            if conf > 30 and word.strip():
+            if int(data["conf"][i]) > 30 and word.strip():
                 x, y, w, h = (
                     data["left"][i], data["top"][i],
                     data["width"][i], data["height"][i],
@@ -122,47 +157,6 @@ if mode == MODE_DOC:
 
 # ── MODE 2: Signboard / Scene Text (DB detector + CRNN recognizer) ───────────
 elif mode == MODE_SCENE:
-
-    def four_points_transform(frame, vertices):
-        vertices = np.asarray(vertices, dtype=np.float32)
-        out_size = (100, 32)
-        target   = np.array(
-            [[0, out_size[1]-1], [0, 0],
-             [out_size[0]-1, 0], [out_size[0]-1, out_size[1]-1]],
-            dtype=np.float32,
-        )
-        M = cv2.getPerspectiveTransform(vertices, target)
-        return cv2.warpPerspective(frame, M, out_size)
-
-    @st.cache_resource()
-    def load_scene_models():
-        # DB TD500 ResNet-18: trained on text-in-the-wild, handles varied orientations
-        det_path = ensure_model("DB_TD500_resnet18.onnx")
-        # CRNN EN: recognizes digits + lowercase a-z
-        rec_path = ensure_model("text_recognition_CRNN_EN_2021sep.onnx")
-
-        detector = cv2.dnn_TextDetectionModel_DB(det_path)
-        detector.setBinaryThreshold(0.3).setPolygonThreshold(0.5)
-        detector.setInputParams(
-            1.0 / 255, (320, 320),
-            (122.67891434, 116.66876762, 104.00698793), True,
-        )
-
-        # Load 94-char vocab if available (for crnn_cs compatibility); fallback to 36-char EN set
-        vocab_path = "models/alphabet_94.txt"
-        try:
-            with open(vocab_path) as f:
-                vocabulary = [line.strip() for line in f if line.strip()]
-        except FileNotFoundError:
-            vocabulary = list("0123456789abcdefghijklmnopqrstuvwxyz")
-
-        recognizer = cv2.dnn_TextRecognitionModel(rec_path)
-        recognizer.setDecodeType("CTC-greedy")
-        recognizer.setVocabulary(list("0123456789abcdefghijklmnopqrstuvwxyz"))
-        recognizer.setInputParams(1 / 127.5, (100, 32), (127.5, 127.5, 127.5), True)
-
-        return detector, recognizer
-
     col_ctrl, col_img = st.columns([1, 3])
     with col_ctrl:
         bin_thresh  = st.slider("Binary threshold",  0.1, 0.9, 0.3, 0.05,
@@ -173,9 +167,11 @@ elif mode == MODE_SCENE:
     col_img.image(image, caption="Uploaded image", use_container_width=True)
 
     if st.button("Detect & Recognize Text", type="primary"):
-        with st.spinner("Loading models (first run may download ~55 MB)…"):
+        # _load_scene_models() is cached at module level — runs once, returns
+        # the cached objects on every subsequent call regardless of rerun cause.
+        with st.spinner("Loading models…"):
             try:
-                detector, recognizer = load_scene_models()
+                detector, recognizer = _load_scene_models()
             except Exception as e:
                 st.error(f"Failed to load scene text models: {e}")
                 st.stop()
@@ -190,16 +186,14 @@ elif mode == MODE_SCENE:
             st.image(image, use_container_width=True)
             st.stop()
 
-        words          = []
-        annotated      = img_bgr.copy()
-        output_canvas  = np.full(img_bgr.shape, 255, dtype=np.uint8)
+        words         = []
+        annotated     = img_bgr.copy()
+        output_canvas = np.full(img_bgr.shape, 255, dtype=np.uint8)
 
         for box in boxes:
-            roi  = four_points_transform(img_bgr, box)
+            roi  = _four_points_transform(img_bgr, box)
             word = recognizer.recognize(roi)
-
             cv2.polylines(annotated, [box.astype(np.int32)], True, (255, 0, 255), 2)
-
             if word.strip():
                 words.append(word)
                 if show_canvas:
@@ -207,8 +201,8 @@ elif mode == MODE_SCENE:
                     fs    = cv2.getFontScaleFromHeight(
                         cv2.FONT_HERSHEY_SIMPLEX, max(box_h - 8, 5), 1
                     )
-                    pos = (int(box[0, 0]), int(box[0, 1]))
-                    cv2.putText(output_canvas, word, pos,
+                    cv2.putText(output_canvas, word,
+                                (int(box[0, 0]), int(box[0, 1])),
                                 cv2.FONT_HERSHEY_SIMPLEX, fs, (180, 0, 0), 1, cv2.LINE_AA)
 
         col1, col2 = st.columns(2)
