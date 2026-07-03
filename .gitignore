@@ -218,6 +218,7 @@ streamlit-app/docs/
 
 # Claude Code instructions
 streamlit-app/CLAUDE.md
+/CLAUDE.md
 
 # Large model binaries — download separately
 streamlit-app/models/*.caffemodel
