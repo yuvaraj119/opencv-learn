@@ -1,5 +1,6 @@
 import streamlit as st
 import qrcode
+import qrcode.constants
 from PIL import Image
 import io
 from utils import show_page_info
