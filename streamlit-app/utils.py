@@ -389,13 +389,17 @@ _RELEASE_BASE = (
 
 # Maps filename → approximate size in bytes (for progress display)
 _MODEL_REGISTRY: dict[str, int] = {
-    "res10_300x300_ssd_iter_140000_fp16.caffemodel": 5_300_000,
-    "MobileNetSSD_deploy.caffemodel":                22_000_000,
-    "DenseNet_121.caffemodel":                       31_000_000,
+    # Face / portrait detection (YuNet ONNX — replaces Caffe SSD in OpenCV 5)
+    "face_detection_yunet_2023mar.onnx":             388_000,
+    # Image classification (GoogLeNet ONNX — replaces DenseNet Caffe in OpenCV 5)
+    "googlenet-9.onnx":                              26_000_000,
+    # Object / person detection
     "ssd_mobilenet_frozen_inference_graph.pb":       66_000_000,
+    # MediaPipe task models
     "face_landmarker.task":                           3_600_000,
     "person_segmenter.tflite":                        2_700_000,
     "pose_landmarker_heavy.task":                    29_000_000,
+    # Super resolution
     "LapSRN_x2.pb":                                   1_300_000,
     "LapSRN_x4.pb":                                   2_600_000,
     "LapSRN_x8.pb":                                   3_900_000,

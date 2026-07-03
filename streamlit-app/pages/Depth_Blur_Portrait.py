@@ -13,7 +13,8 @@ st.write("Simulate smartphone portrait mode by detecting the face and blurring t
 
 @st.cache_resource()
 def load_face_model():
-    return cv2.dnn.readNet(ensure_model("res10_300x300_ssd_iter_140000_fp16.caffemodel"), "models/deploy.prototxt")
+    model_path = ensure_model("face_detection_yunet_2023mar.onnx")
+    return cv2.FaceDetectorYN.create(model_path, "", (320, 320), score_threshold=0.1)
 
 def get_download_link(img_bgr, filename):
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -39,23 +40,20 @@ if uploaded_file is not None:
         expand_factor = st.slider("Face Region Size", 1.0, 3.0, 1.5, 0.1,
                                    help="How far beyond the detected face box to keep sharp")
 
-    net = load_face_model()
-    blob = cv2.dnn.blobFromImage(img_bgr, 1.0, (300, 300), [104, 117, 123], False, False)
-    net.setInput(blob)
-    detections = net.forward()
+    detector = load_face_model()
+    detector.setInputSize((w, h))
+    detector.setScoreThreshold(conf_threshold)
+    _, faces = detector.detect(img_bgr)
 
     face_mask = np.zeros((h, w), dtype=np.uint8)
     face_count = 0
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
-        if confidence > conf_threshold:
-            x1 = int(detections[0, 0, i, 3] * w)
-            y1 = int(detections[0, 0, i, 4] * h)
-            x2 = int(detections[0, 0, i, 5] * w)
-            y2 = int(detections[0, 0, i, 6] * h)
-            cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-            fw = int((x2 - x1) * expand_factor / 2)
-            fh = int((y2 - y1) * expand_factor / 2)
+    if faces is not None:
+        for face in faces:
+            x, y, fw_det, fh_det = int(face[0]), int(face[1]), int(face[2]), int(face[3])
+            x2, y2 = x + fw_det, y + fh_det
+            cx, cy = (x + x2) // 2, (y + y2) // 2
+            fw = int(fw_det * expand_factor / 2)
+            fh = int(fh_det * expand_factor / 2)
             cv2.ellipse(face_mask, (cx, cy), (max(1, fw), max(1, fh)), 0, 0, 360, 255, -1)
             face_count += 1
 

@@ -42,21 +42,17 @@ jobs:
         run: |
           mkdir -p models
 
-          echo "==> OpenCV face detector (ResNet-10 SSD)"
-          curl -fL --retry 3 -o models/res10_300x300_ssd_iter_140000_fp16.caffemodel \
-            "https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20180205_fp16/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+          echo "==> YuNet face detector ONNX (replaces Caffe SSD for OpenCV 5)"
+          curl -fL --retry 3 -o models/face_detection_yunet_2023mar.onnx \
+            "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
 
-          echo "==> SSD MobileNet V2 (COCO object detection — TensorFlow frozen graph)"
+          echo "==> GoogLeNet ONNX (ImageNet classification — replaces DenseNet Caffe for OpenCV 5)"
+          curl -fL --retry 3 -o models/googlenet-9.onnx \
+            "https://github.com/onnx/models/raw/main/validated/vision/classification/inception_and_googlenet/googlenet/model/googlenet-9.onnx"
+
+          echo "==> SSD MobileNet V2 (COCO object detection + social distancing — TensorFlow frozen graph)"
           curl -fL --retry 3 -o models/ssd_mobilenet_frozen_inference_graph.pb \
             "https://opencv-courses.s3.us-west-2.amazonaws.com/ssd_mobilenet_frozen_inference_graph.pb"
-
-          echo "==> MobileNet-SSD (person / social distancing detection)"
-          curl -fL --retry 3 -o models/MobileNetSSD_deploy.caffemodel \
-            "https://github.com/chuanqi305/MobileNet-SSD/raw/master/MobileNetSSD_deploy.caffemodel"
-
-          echo "==> DenseNet-121 (ImageNet classification)"
-          curl -fL --retry 3 -o models/DenseNet_121.caffemodel \
-            "https://www.dropbox.com/s/paef0grfzml2c5g/DenseNet_121.caffemodel?dl=1"
 
           echo "==> MediaPipe Face Landmarker"
           curl -fL --retry 3 -o models/face_landmarker.task \
@@ -91,10 +87,9 @@ jobs:
       - name: Verify all files downloaded
         run: |
           expected=(
-            res10_300x300_ssd_iter_140000_fp16.caffemodel
+            face_detection_yunet_2023mar.onnx
+            googlenet-9.onnx
             ssd_mobilenet_frozen_inference_graph.pb
-            MobileNetSSD_deploy.caffemodel
-            DenseNet_121.caffemodel
             face_landmarker.task
             person_segmenter.tflite
             pose_landmarker_heavy.task
@@ -138,10 +133,9 @@ jobs:
 
             | Model | Size | Used by |
             |-------|------|---------|
-            | `res10_300x300_ssd_iter_140000_fp16.caffemodel` | ~5 MB | Face Detection, Depth Blur |
-            | `MobileNetSSD_deploy.caffemodel` | ~22 MB | Social Distancing |
-            | `DenseNet_121.caffemodel` | ~31 MB | Image Classification |
-            | `ssd_mobilenet_frozen_inference_graph.pb` | ~66 MB | Object Detection |
+            | `face_detection_yunet_2023mar.onnx` | ~388 KB | Face Detection, Depth Blur |
+            | `googlenet-9.onnx` | ~26 MB | Image Classification |
+            | `ssd_mobilenet_frozen_inference_graph.pb` | ~66 MB | Object Detection, Social Distancing |
             | `face_landmarker.task` | ~3.6 MB | Blink Detection |
             | `person_segmenter.tflite` | ~2.7 MB | Foreground Segmentation |
             | `pose_landmarker_heavy.task` | ~29 MB | Pose Estimation, Golf Swing |

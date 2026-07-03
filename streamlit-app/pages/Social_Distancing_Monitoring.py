@@ -11,24 +11,23 @@ st.title("Social Distancing Monitoring")
 show_page_info("Social_Distancing_Monitoring")
 st.write("Detect people in an image and flag pairs that are too close together using MobileNet-SSD.")
 
-MODEL_CFG   = "models/MobileNetSSD_deploy.prototxt"
-MODEL_FILE  = None  # loaded lazily via ensure_model()
+MODEL_CFG  = "models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"
 
 @st.cache_resource()
 def load_model():
-    return cv2.dnn.readNet(ensure_model("MobileNetSSD_deploy.caffemodel"), MODEL_CFG)
+    return cv2.dnn.readNet(ensure_model("ssd_mobilenet_frozen_inference_graph.pb"), MODEL_CFG)
 
 def detect_people(frame, net, conf_thresh=0.5):
     """Return list of (confidence, (x1,y1,x2,y2), (cx,cy)) for every detected person."""
     results = []
     h, w = frame.shape[:2]
-    blob = cv2.dnn.blobFromImage(frame, 0.007843, (300, 300), [127.5, 127.5, 127.5])
+    blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), [104, 117, 123], False, False)
     net.setInput(blob)
     output = net.forward()
     for i in np.arange(0, output.shape[2]):
         class_id   = output[0, 0, i, 1]
         confidence = output[0, 0, i, 2]
-        if confidence > conf_thresh and class_id == 15:  # class 15 = person
+        if confidence > conf_thresh and int(class_id) == 1:  # class 1 = person (COCO)
             box = (output[0, 0, i, 3:7] * np.array([w, h, w, h])).astype(int)
             cx  = int((box[0] + box[2]) / 2)
             cy  = int((box[1] + box[3]) / 2)
