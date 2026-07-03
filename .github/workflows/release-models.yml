@@ -1,0 +1,152 @@
+name: Release Model Files
+
+on:
+  # Run manually from the Actions tab, optionally overriding the tag
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1-models)'
+        required: true
+        default: 'v1.0-models'
+      overwrite:
+        description: 'Overwrite existing release if tag already exists'
+        required: false
+        default: 'false'
+        type: boolean
+
+  # Also run automatically when a tag matching v*-models is pushed
+  push:
+    tags:
+      - 'v*-models'
+
+jobs:
+  release-models:
+    name: Download models and publish release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create releases and upload assets
+
+    steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Download all model files ───────────────────────────────────────────
+
+      - name: Download models
+        run: |
+          mkdir -p models
+
+          echo "==> OpenCV face detector (ResNet-10 SSD)"
+          curl -fL --retry 3 -o models/res10_300x300_ssd_iter_140000_fp16.caffemodel \
+            "https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20180205_fp16/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+
+          echo "==> SSD MobileNet V2 (COCO object detection — TensorFlow frozen graph)"
+          curl -fL --retry 3 -o models/ssd_mobilenet_frozen_inference_graph.pb \
+            "https://opencv-courses.s3.us-west-2.amazonaws.com/ssd_mobilenet_frozen_inference_graph.pb"
+
+          echo "==> MobileNet-SSD (person / social distancing detection)"
+          curl -fL --retry 3 -o models/MobileNetSSD_deploy.caffemodel \
+            "https://github.com/chuanqi305/MobileNet-SSD/raw/master/MobileNetSSD_deploy.caffemodel"
+
+          echo "==> DenseNet-121 (ImageNet classification)"
+          curl -fL --retry 3 -o models/DenseNet_121.caffemodel \
+            "https://www.dropbox.com/s/paef0grfzml2c5g/DenseNet_121.caffemodel?dl=1"
+
+          echo "==> MediaPipe Face Landmarker"
+          curl -fL --retry 3 -o models/face_landmarker.task \
+            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+
+          echo "==> MediaPipe Selfie Segmenter (person segmentation)"
+          curl -fL --retry 3 -o models/person_segmenter.tflite \
+            "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+
+          echo "==> MediaPipe Pose Landmarker Heavy"
+          curl -fL --retry 3 -o models/pose_landmarker_heavy.task \
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+
+          echo "==> Super Resolution — FSRCNN x2 x3 x4"
+          for scale in 2 3 4; do
+            curl -fL --retry 3 -o models/FSRCNN_x${scale}.pb \
+              "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x${scale}.pb"
+          done
+
+          echo "==> Super Resolution — ESPCN x2 x3 x4"
+          for scale in 2 3 4; do
+            curl -fL --retry 3 -o models/ESPCN_x${scale}.pb \
+              "https://github.com/fannymonori/TF-ESPCN/raw/master/export/ESPCN_x${scale}.pb"
+          done
+
+          echo "==> Super Resolution — LapSRN x2 x4 x8"
+          for scale in 2 4 8; do
+            curl -fL --retry 3 -o models/LapSRN_x${scale}.pb \
+              "https://github.com/fannymonori/TF-LapSRN/raw/master/export/LapSRN_x${scale}.pb"
+          done
+
+      - name: Verify all files downloaded
+        run: |
+          expected=(
+            res10_300x300_ssd_iter_140000_fp16.caffemodel
+            ssd_mobilenet_frozen_inference_graph.pb
+            MobileNetSSD_deploy.caffemodel
+            DenseNet_121.caffemodel
+            face_landmarker.task
+            person_segmenter.tflite
+            pose_landmarker_heavy.task
+            FSRCNN_x2.pb FSRCNN_x3.pb FSRCNN_x4.pb
+            ESPCN_x2.pb  ESPCN_x3.pb  ESPCN_x4.pb
+            LapSRN_x2.pb LapSRN_x4.pb LapSRN_x8.pb
+          )
+          failed=0
+          for f in "${expected[@]}"; do
+            size=$(stat -c%s "models/$f" 2>/dev/null || echo 0)
+            if [ "$size" -lt 10000 ]; then
+              echo "❌  $f  (size=${size} — download may have failed)"
+              failed=$((failed+1))
+            else
+              echo "✅  $f  ($(numfmt --to=iec $size))"
+            fi
+          done
+          [ $failed -eq 0 ] || { echo ""; echo "$failed file(s) failed to download."; exit 1; }
+
+      # ── Create / update the GitHub Release ────────────────────────────────
+
+      - name: Delete existing release if overwrite requested
+        if: github.event.inputs.overwrite == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete ${{ steps.tag.outputs.value }} \
+            --repo ${{ github.repository }} --yes 2>/dev/null || true
+          git push --delete origin ${{ steps.tag.outputs.value }} 2>/dev/null || true
+
+      - name: Create release and upload model assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: "Model Files ${{ steps.tag.outputs.value }}"
+          body: |
+            Pre-trained model binaries for the **OpenCV Vision Lab** Streamlit app.
+
+            These files are downloaded automatically at runtime by the app via `ensure_model()` in `utils.py`.
+            You do not need to download them manually.
+
+            | Model | Size | Used by |
+            |-------|------|---------|
+            | `res10_300x300_ssd_iter_140000_fp16.caffemodel` | ~5 MB | Face Detection, Depth Blur |
+            | `MobileNetSSD_deploy.caffemodel` | ~22 MB | Social Distancing |
+            | `DenseNet_121.caffemodel` | ~31 MB | Image Classification |
+            | `ssd_mobilenet_frozen_inference_graph.pb` | ~66 MB | Object Detection |
+            | `face_landmarker.task` | ~3.6 MB | Blink Detection |
+            | `person_segmenter.tflite` | ~2.7 MB | Foreground Segmentation |
+            | `pose_landmarker_heavy.task` | ~29 MB | Pose Estimation, Golf Swing |
+            | `FSRCNN_x{2,3,4}.pb` | <50 KB each | Super Resolution |
+            | `ESPCN_x{2,3,4}.pb` | <100 KB each | Super Resolution |
+            | `LapSRN_x{2,4,8}.pb` | 1–4 MB each | Super Resolution |
+          files: models/*
+          fail_on_unmatched_files: true
