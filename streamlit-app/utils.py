@@ -397,6 +397,14 @@ _DIRECT_URLS: dict[str, str] = {
         "https://github.com/onnx/models/raw/main/validated/vision/classification"
         "/inception_and_googlenet/googlenet/model/googlenet-9.onnx"
     ),
+    "text_detection_DB_IC15_resnet18_2021sep.onnx": (
+        "https://github.com/opencv/opencv_zoo/raw/main/models/text_detection_db"
+        "/text_detection_DB_IC15_resnet18_2021sep.onnx"
+    ),
+    "text_recognition_CRNN_EN_2021sep.onnx": (
+        "https://github.com/opencv/opencv_zoo/raw/main/models/text_recognition_crnn"
+        "/text_recognition_CRNN_EN_2021sep.onnx"
+    ),
     "FSRCNN_x2.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x2.pb",
     "FSRCNN_x3.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x3.pb",
     "FSRCNN_x4.pb": "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x4.pb",
@@ -427,6 +435,8 @@ _DIRECT_URLS: dict[str, str] = {
 _MODEL_REGISTRY: dict[str, int] = {
     "face_detection_yunet_2023mar.onnx":             388_000,
     "googlenet-9.onnx":                              26_000_000,
+    "text_detection_DB_IC15_resnet18_2021sep.onnx":  13_000_000,
+    "text_recognition_CRNN_EN_2021sep.onnx":          8_600_000,
     "ssd_mobilenet_frozen_inference_graph.pb":       66_000_000,
     "face_landmarker.task":                           3_600_000,
     "person_segmenter.tflite":                        2_700_000,
