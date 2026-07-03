@@ -1,6 +1,5 @@
 import streamlit as st
 import qrcode
-import qrcode.constants
 from PIL import Image
 import io
 from utils import show_page_info
@@ -35,10 +34,10 @@ with col5:
 
 if st.button("Generate QR Code"):
     # Map error correction
-    ec_dict = {"L": qrcode.constants.ERROR_CORRECT_L,
-               "M": qrcode.constants.ERROR_CORRECT_M,
-               "Q": qrcode.constants.ERROR_CORRECT_Q,
-               "H": qrcode.constants.ERROR_CORRECT_H}
+    ec_dict = {"L": qrcode.ERROR_CORRECT_L,
+               "M": qrcode.ERROR_CORRECT_M,
+               "Q": qrcode.ERROR_CORRECT_Q,
+               "H": qrcode.ERROR_CORRECT_H}
 
     # Create QR code
     qr = qrcode.QRCode(
