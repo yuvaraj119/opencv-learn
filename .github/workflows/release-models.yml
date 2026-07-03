@@ -66,6 +66,14 @@ jobs:
           curl -fL --retry 3 -o models/pose_landmarker_heavy.task \
             "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
 
+          echo "==> DB text detector ONNX (scene/signboard OCR)"
+          curl -fL --retry 3 -o models/DB_TD500_resnet18.onnx \
+            "https://github.com/opencv/opencv_zoo/raw/main/models/text_detection_db/text_detection_DB_TD500_resnet18_2021sep.onnx"
+
+          echo "==> CRNN text recognizer ONNX (scene/signboard OCR)"
+          curl -fL --retry 3 -o models/text_recognition_CRNN_EN_2021sep.onnx \
+            "https://github.com/opencv/opencv_zoo/raw/main/models/text_recognition_crnn/text_recognition_CRNN_EN_2021sep.onnx"
+
           echo "==> Super Resolution — FSRCNN x2 x3 x4"
           for scale in 2 3 4; do
             curl -fL --retry 3 -o models/FSRCNN_x${scale}.pb \
@@ -89,6 +97,8 @@ jobs:
           expected=(
             face_detection_yunet_2023mar.onnx
             googlenet-9.onnx
+            DB_TD500_resnet18.onnx
+            text_recognition_CRNN_EN_2021sep.onnx
             ssd_mobilenet_frozen_inference_graph.pb
             face_landmarker.task
             person_segmenter.tflite
@@ -133,8 +143,10 @@ jobs:
 
             | Model | Size | Used by |
             |-------|------|---------|
-            | `face_detection_yunet_2023mar.onnx` | ~388 KB | Face Detection, Depth Blur |
-            | `googlenet-9.onnx` | ~26 MB | Image Classification |
+            | `face_detection_yunet_2023mar.onnx` | ~227 KB | Face Detection, Depth Blur |
+            | `googlenet-9.onnx` | ~27 MB | Image Classification |
+            | `DB_TD500_resnet18.onnx` | ~47 MB | OCR — Scene Text Detection |
+            | `text_recognition_CRNN_EN_2021sep.onnx` | ~32 MB | OCR — Scene Text Recognition |
             | `ssd_mobilenet_frozen_inference_graph.pb` | ~66 MB | Object Detection, Social Distancing |
             | `face_landmarker.task` | ~3.6 MB | Blink Detection |
             | `person_segmenter.tflite` | ~2.7 MB | Foreground Segmentation |
