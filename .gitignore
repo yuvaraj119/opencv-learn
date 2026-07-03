@@ -213,6 +213,9 @@ __marimo__/
 # Large notebook (>100 MB, exceeds GitHub limit)
 BasicImageOperations.ipynb
 
+# Docs
+streamlit-app/docs/
+
 # Large model binaries — download separately
 streamlit-app/models/*.caffemodel
 streamlit-app/models/*.pb
