@@ -136,15 +136,25 @@ elif mode == MODE_SCENE:
 
     @st.cache_resource()
     def load_scene_models():
-        det_path = ensure_model("text_detection_DB_IC15_resnet18_2021sep.onnx")
+        # DB TD500 ResNet-18: trained on text-in-the-wild, handles varied orientations
+        det_path = ensure_model("DB_TD500_resnet18.onnx")
+        # CRNN EN: recognizes digits + lowercase a-z
         rec_path = ensure_model("text_recognition_CRNN_EN_2021sep.onnx")
 
         detector = cv2.dnn_TextDetectionModel_DB(det_path)
         detector.setBinaryThreshold(0.3).setPolygonThreshold(0.5)
         detector.setInputParams(
-            1.0 / 255, (640, 640),
+            1.0 / 255, (320, 320),
             (122.67891434, 116.66876762, 104.00698793), True,
         )
+
+        # Load 94-char vocab if available (for crnn_cs compatibility); fallback to 36-char EN set
+        vocab_path = "models/alphabet_94.txt"
+        try:
+            with open(vocab_path) as f:
+                vocabulary = [line.strip() for line in f if line.strip()]
+        except FileNotFoundError:
+            vocabulary = list("0123456789abcdefghijklmnopqrstuvwxyz")
 
         recognizer = cv2.dnn_TextRecognitionModel(rec_path)
         recognizer.setDecodeType("CTC-greedy")
@@ -163,7 +173,7 @@ elif mode == MODE_SCENE:
     col_img.image(image, caption="Uploaded image", use_container_width=True)
 
     if st.button("Detect & Recognize Text", type="primary"):
-        with st.spinner("Loading models (first run downloads ~22 MB)…"):
+        with st.spinner("Loading models (first run may download ~55 MB)…"):
             try:
                 detector, recognizer = load_scene_models()
             except Exception as e:
