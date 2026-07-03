@@ -1,16 +1,29 @@
 import streamlit as st
 import cv2
 import numpy as np
-from osgeo import gdal
 import tempfile
 import os
 import matplotlib.pyplot as plt
 from utils import show_page_info
 
+try:
+    from osgeo import gdal
+    GDAL_AVAILABLE = True
+except ImportError:
+    GDAL_AVAILABLE = False
+
 st.set_page_config(page_title="Analyzing Satellite Imagery", page_icon="🛰️")
 
 st.title("Analyzing Satellite Imagery using GeoTIFF")
 show_page_info("Satellite_Imagery_Analysis")
+
+if not GDAL_AVAILABLE:
+    st.error(
+        "**GDAL is not installed.** This page requires the `GDAL` Python package.\n\n"
+        "Install it with:\n```\npip install GDAL\n```\n"
+        "or on macOS: `brew install gdal && pip install GDAL`"
+    )
+    st.stop()
 
 def get_NDVI(ds):
     # In LandSat5, Red is Band 3 and NIR is Band 4

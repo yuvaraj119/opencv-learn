@@ -16,7 +16,7 @@ MODEL_FILE  = None  # loaded lazily via ensure_model()
 
 @st.cache_resource()
 def load_model():
-    return cv2.dnn.readNetFromCaffe(MODEL_CFG, ensure_model("MobileNetSSD_deploy.caffemodel"))
+    return cv2.dnn.readNet(ensure_model("MobileNetSSD_deploy.caffemodel"), MODEL_CFG)
 
 def detect_people(frame, net, conf_thresh=0.5):
     """Return list of (confidence, (x1,y1,x2,y2), (cx,cy)) for every detected person."""

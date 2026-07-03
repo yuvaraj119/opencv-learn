@@ -64,7 +64,7 @@ def process_detections(frame, detections, conf_threshold=0.5):
 def load_model():
     modelFile  = ensure_model("res10_300x300_ssd_iter_140000_fp16.caffemodel")
     configFile = "models/deploy.prototxt"
-    net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
+    net = cv2.dnn.readNet(modelFile, configFile)
     return net
 
 # Function to generate a download link for output file.

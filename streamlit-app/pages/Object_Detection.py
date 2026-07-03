@@ -69,7 +69,7 @@ def load_model():
     configFile = "models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"
     with open("models/coco_class_labels.txt") as f:
         class_names = f.read().strip().split("\n")
-    net = cv2.dnn.readNetFromTensorflow(modelFile, configFile)
+    net = cv2.dnn.readNet(modelFile, configFile)
     return net, class_names
 
 # Function to generate a download link for output file.
