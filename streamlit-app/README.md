@@ -157,6 +157,10 @@ streamlit-app/
 
 ---
 
+## References
+
+- [Mastering OpenCV with Python](https://opencv.org/university/courses/mastering-opencv-with-python/?utm_source=ocv&utm_medium=midblog&utm_campaign=AdvancecareerOpenCV) — OpenCV University course this project is based on
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
