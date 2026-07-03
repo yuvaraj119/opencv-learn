@@ -216,6 +216,9 @@ BasicImageOperations.ipynb
 # Docs
 streamlit-app/docs/
 
+# Claude Code instructions
+streamlit-app/CLAUDE.md
+
 # Large model binaries — download separately
 streamlit-app/models/*.caffemodel
 streamlit-app/models/*.pb
