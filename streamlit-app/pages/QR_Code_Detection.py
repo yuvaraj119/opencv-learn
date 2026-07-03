@@ -12,8 +12,8 @@ show_page_info("QR_Code_Detection")
 uploaded_file = st.file_uploader("Upload an image with QR code", type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    img_array = np.array(image)
+    image = Image.open(uploaded_file).convert("RGB")
+    img_array = np.array(image, dtype=np.uint8)
     img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
     st.image(image, caption="Uploaded Image")
